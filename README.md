@@ -127,35 +127,124 @@ NEXT_PUBLIC_API_URL=http://localhost:3001/api
 
 ## 📡 API Endpoints
 
-### Users
-- `GET /api/user-credits/:userId` - Get user credits
-- `POST /api/fix-credits/:userId` - Fix user credits
+### Core Application
+- `GET /` - API root with server info and endpoint listing
+- `GET /api/health` - Health check with system status
+- `POST /` - SMS forwarder fallback endpoint
 
-### Transactions (PromptPay)
-- `POST /api/create-transaction` - Create new transaction
+### 👤 User Management
+- `GET /api/user-credits/:userId` - Get user credit balance
+- `POST /api/fix-credits/:userId` - Manually fix user credits
+  ```json
+  Body: { "amount": number }
+  ```
+
+### 💳 Transaction Management (PromptPay)
+- `POST /api/create-transaction` - Create new payment transaction
+  ```json
+  Body: { "userId": "string", "amount": number }
+  ```
 - `GET /api/transaction-status/:transactionId` - Check transaction status
-- `GET /api/transactions/:userId` - Get transaction history
-- `DELETE /api/transaction/:transactionId` - Delete transaction
-- `POST /api/confirm-transaction/:transactionId` - Confirm transaction
+- `GET /api/transactions/:userId` - Get user transaction history
+  ```
+  Query: ?limit=10&offset=0
+  ```
+- `DELETE /api/transaction/:transactionId` - Delete specific transaction
+- `DELETE /api/transactions/pending` - Delete all pending transactions
+- `POST /api/confirm-transaction/:transactionId` - Confirm transaction payment
 - `GET /api/stats` - Get transaction statistics
+- `POST /api/create-outgoing-transaction` - Create outgoing payment
+  ```json
+  Body: { "userId": "string", "amount": number, "recipientPhone": "string", "description": "string" }
+  ```
+- `GET /api/outgoing-transactions/:userId` - Get outgoing transaction history
+- `POST /api/process-outgoing-payment` - Process outgoing payment confirmation
+  ```json
+  Body: { "transactionId": "string", "smsData": "object" }
+  ```
+- `GET /api/transaction-by-amount?amount=100` - Find transaction by amount
 
-### TrueWallet
+### 🎁 TrueWallet Management
 - `POST /api/truewallet/validate` - Validate voucher code
+  ```json
+  Body: { "voucherCode": "string" }
+  ```
 - `POST /api/truewallet/redeem` - Redeem voucher
-- `GET /api/truewallet/history/:userId` - Get voucher history
-- `GET /api/truewallet/stats` - Get voucher statistics
+  ```json
+  Body: { "userId": "string", "voucherCode": "string", "phone": "string" }
+  ```
+- `GET /api/truewallet/history/:userId` - Get voucher redemption history
+  ```
+  Query: ?limit=10&offset=0
+  ```
+- `GET /api/truewallet/stats` - Get voucher redemption statistics
+- `GET /api/truewallet/recent` - Get recent voucher redemptions
+  ```
+  Query: ?limit=20
+  ```
+- `DELETE /api/truewallet/voucher/:voucherId` - Delete voucher record
+- `GET /api/truewallet/all` - Get all voucher records
 
-### SMS Webhook
-- `POST /api/sms-webhook` - SMS webhook endpoint
-- `GET /api/sms-logs` - Get SMS logs
-- `POST /api/test-sms-parsing` - Test SMS parsing
+### 📱 SMS Management
+- `POST /api/sms-forwarder` - Process SMS from forwarder app
+  ```json
+  Body: { "from": "string", "text": "string", "message": "string", "sentStamp": "string", "receivedStamp": "string", "sim": "string" }
+  ```
+- `POST /api/sms-webhook` - Main SMS webhook for payment notifications
+  ```json
+  Body: { "message": "string", "from": "string", "timestamp": "string" }
+  ```
+- `GET /api/sms-logs` - Retrieve recent SMS logs
+  ```
+  Query: ?limit=10
+  ```
+- `POST /api/test-sms-parsing` - Test SMS message parsing
+  ```json
+  Body: { "message": "string" }
+  ```
 
-### Testing
-- `POST /api/test-qr` - Test QR generation
-- `POST /api/test-sms-parse` - Test SMS parsing
+### 🧪 Testing & Development
+- `POST /api/test-qr` - Test QR code generation
+  ```json
+  Body: { "phone": "string", "amount": number }
+  ```
+- `POST /api/test-sms-parse` - Test SMS parsing functionality
+  ```json
+  Body: { "message": "string" }
+  ```
+- `POST /api/test-sms-detection` - Test SMS detection patterns
+  ```json
+  Body: { "message": "string" }
+  ```
+- `POST /api/test-truewallet` - Test TrueWallet validation
+  ```json
+  Body: { "voucherCode": "string" }
+  ```
+- `GET /api/test-db` - Test database connection
 - `GET /api/system-info` - Get system information
-- `GET /api/run-all-tests` - Run all tests
-- `GET /api/health-check` - Health check
+- `GET /api/run-all-tests` - Run complete test suite
+- `GET /api/health-check` - Alternative health check
+
+### 📊 Response Format
+All endpoints return JSON responses with consistent structure:
+```json
+{
+  "success": true,
+  "data": "...",
+  "timestamp": "2024-XX-XX...",
+  "message": "Optional message"
+}
+```
+
+Error responses:
+```json
+{
+  "success": false,
+  "error": "Error message",
+  "details": "Additional details",
+  "timestamp": "2024-XX-XX..."
+}
+```
 
 ## 🚀 Usage
 
