@@ -1,346 +1,225 @@
-# PromptPay & TrueWallet Payment System
+# PromptPay & TrueWallet System (Next.js + Nest.js)
 
-A complete payment integration system supporting both PromptPay QR Code generation and TrueWallet voucher redemption with automatic SMS detection.
+ระบบเติมเงินครบวงจรที่รองรับทั้ง PromptPay และ TrueWallet ซองอั่งเปา แปลงจาก React/Express มาเป็น Next.js/Nest.js
 
-## Features
+## 🚀 Features
 
-### PromptPay Integration
-- Generate dynamic PromptPay QR codes with random cents for security
-- Automatic transaction timeout (5 minutes)
-- SMS detection with KBank curl format support
-- Real-time transaction status monitoring
-- Auto-cleanup of expired transactions
+### Frontend (Next.js)
+- ✅ **PaymentHubComponent** - หน้าหลักสำหรับเลือกวิธีการเติมเงิน
+- ✅ **TopUpComponent** - สร้าง QR Code PromptPay และตรวจสอบสถานะการชำระ
+- ✅ **TrueWalletComponent** - แลกซองอั่งเปา TrueWallet
+- ✅ TypeScript support
+- ✅ Tailwind CSS
+- ✅ Responsive design
 
-### TrueWallet Integration
-- Redeem TrueWallet vouchers using codes or gift URLs
-- Duplicate voucher protection
-- Voucher transaction history tracking
-- Comprehensive error handling with Thai language messages
-- Statistics and analytics
+### Backend (Nest.js)
+- ✅ **Users Module** - จัดการ user และ credits
+- ✅ **Transactions Module** - สร้างและจัดการ PromptPay transactions
+- ✅ **TrueWallet Module** - แลกซองและจัดการ vouchers
+- ✅ **SMS Module** - รับ SMS webhook สำหรับยืนยันการชำระ
+- ✅ **Test Module** - ทดสอบระบบทั้งหมด
+- ✅ TypeORM + SQLite
+- ✅ CORS enabled
+- ✅ Global validation
 
-### System Features
-- User credit management
-- Transaction history for both payment methods
-- Admin dashboard with payment statistics
-- RESTful API with comprehensive endpoints
-- React frontend with tabbed interface
-- SQLite database with auto-migrations
-- Rate limiting and security headers
+## 📁 Project Structure
 
-## Tech Stack
+```
+├── nextjs-frontend/          # Next.js Frontend
+│   ├── app/
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── components/
+│   │   ├── PaymentHubComponent.tsx
+│   │   ├── TopUpComponent.tsx
+│   │   └── TrueWalletComponent.tsx
+│   └── .env.local
+│
+├── nestjs-backend/           # Nest.js Backend
+│   ├── src/
+│   │   ├── entities/
+│   │   ├── users/
+│   │   ├── transactions/
+│   │   ├── truewallet/
+│   │   ├── sms/
+│   │   ├── test/
+│   │   ├── utils/
+│   │   └── main.ts
+│   └── .env
+│
+└── original/                 # Original Project (for reference)
+```
 
-**Backend:**
-- Node.js + Express
-- SQLite database
-- @fortune-inc/tw-voucher for TrueWallet integration
-- promptpay-qr for QR code generation
-- SMS webhook integration
-
-**Frontend:**
-- React 19
-- Tailwind CSS
-- Lucide React icons
-- Axios for API calls
-
-## Quick Start
+## 🛠️ Installation
 
 ### Prerequisites
-- Node.js 14+
+- Node.js 18+
 - npm or yarn
 
-### Installation
+### Backend Setup (Nest.js)
 
-1. **Clone the repository**
 ```bash
-git clone https://github.com/neszaran194/promptpay-truewallet-system.git
-cd promptpay-truewallet-system
-```
+cd nestjs-backend
 
-2. **Backend setup**
-```bash
-# Install backend dependencies
+# Install dependencies
 npm install
 
-# Copy environment file
+# Configure environment
 cp .env.example .env
+# Edit .env file with your settings
 
-# Edit .env with your configuration
-# The phone number 0944283381 is locked for both payment methods
+# Start development server
+npm run start:dev
 ```
 
-3. **Frontend setup**
+### Frontend Setup (Next.js)
+
 ```bash
-cd frontend
+cd nextjs-frontend
+
+# Install dependencies
 npm install
 
-# Copy environment file
-cp .env.example .env
-```
+# Configure environment
+# Create .env.local with API URL
 
-4. **Start the application**
-```bash
-# Terminal 1 - Backend
+# Start development server
 npm run dev
-
-# Terminal 2 - Frontend
-cd frontend
-npm start
 ```
 
-The application will be available at:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:3001
-
-## Environment Configuration
+## 🔧 Configuration
 
 ### Backend (.env)
-```env
-PORT=3001
-DB_PATH=./transactions.db
-NODE_ENV=development
+```bash
+# Database Configuration
+DATABASE_URL=database.sqlite
 
-# Locked phone numbers
+# PromptPay Configuration
 PROMPTPAY_PHONE=0944283381
+
+# TrueWallet Configuration
 TRUEWALLET_PHONE=0944283381
 
-# Security
-SMS_WEBHOOK_SECRET=your_webhook_secret_here
+# Server Configuration
+PORT=3001
 ```
 
-### Frontend (.env)
-```env
-REACT_APP_API_URL=http://localhost:3001/api
-REACT_APP_TRUEWALLET_PHONE=0944283381
-REACT_APP_PROMPTPAY_PHONE=0944283381
-```
-
-## API Documentation
-
-### Core Endpoints
-
-#### PromptPay
-- `POST /api/create-transaction` - Create new transaction
-- `GET /api/transaction-status/:id` - Check transaction status
-- `POST /api/sms-webhook` - SMS webhook for auto-confirmation
-
-#### TrueWallet
-- `POST /api/truewallet/redeem` - Redeem voucher
-- `GET /api/truewallet/history/:userId` - Voucher history
-- `GET /api/truewallet/stats` - Voucher statistics
-- `POST /api/truewallet/validate` - Validate voucher code
-
-#### User Management
-- `GET /api/user-credits/:userId` - Get user credits
-- `GET /api/transactions/:userId` - Transaction history
-- `POST /api/fix-credits/:userId` - Manual credit adjustment
-
-#### System
-- `GET /api/health` - Health check
-- `GET /api/stats` - System statistics
-- `GET /api/payment/stats` - Payment method statistics
-
-### Usage Examples
-
-#### Create PromptPay Transaction
-```javascript
-const response = await fetch('/api/create-transaction', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    userId: 'user_123',
-    amount: 100
-  })
-});
-```
-
-#### Redeem TrueWallet Voucher
-```javascript
-const response = await fetch('/api/truewallet/redeem', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    userId: 'user_123',
-    voucherCode: 'xxxxhFog10Ijbmg1c'
-  })
-});
-```
-
-## Project Structure
-
-```
-promptpay-truewallet-system/
-├── backend/
-│   ├── config/
-│   │   └── database.js          # Database configuration
-│   ├── services/
-│   │   ├── userService.js       # User management
-│   │   ├── transactionService.js # PromptPay transactions
-│   │   └── truewalletService.js # TrueWallet vouchers
-│   ├── utils/
-│   │   ├── promptpay.js         # QR code generation
-│   │   └── smsParser.js         # SMS detection logic
-│   ├── routes/
-│   │   ├── transactions.js      # PromptPay endpoints
-│   │   ├── users.js            # User endpoints
-│   │   ├── sms.js              # SMS webhook
-│   │   ├── truewallet.js       # TrueWallet endpoints
-│   │   └── test.js             # Testing endpoints
-│   ├── middleware/
-│   │   └── index.js            # Security & logging
-│   └── server.js               # Main application
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── PaymentHubComponent.jsx   # Main interface
-│   │   │   ├── TopUpComponent.jsx        # PromptPay UI
-│   │   │   └── TrueWalletComponent.jsx   # TrueWallet UI
-│   │   ├── App.js
-│   │   └── index.js
-│   └── public/
-├── .env.example
-├── .gitignore
-└── README.md
-```
-
-## SMS Webhook Integration
-
-The system supports automatic transaction confirmation via SMS webhooks. Currently supports:
-
-- KBank curl format detection
-- Standard Thai SMS patterns
-- Amount parsing with multiple patterns
-- Transaction type detection (incoming/outgoing)
-
-Example webhook payload:
-```json
-{
-  "from": "KBANK",
-  "message": "15/09/68 03:49 ?? X-0147 ???????? 100.47 ??????? 435.55 ?.",
-  "timestamp": 1640995200000
-}
-```
-
-## TrueWallet Error Handling
-
-The system handles various TrueWallet error codes with user-friendly Thai messages:
-
-- `VOUCHER_OUT_OF_STOCK` - Voucher is used up
-- `INVALID_VOUCHER` - Invalid voucher code
-- `VOUCHER_EXPIRED` - Voucher has expired
-- `CANNOT_GET_OWN_VOUCHER` - Cannot redeem own voucher
-- `TARGET_USER_REDEEMED` - Target user already redeemed
-
-## Security Features
-
-- Phone number locked to 0944283381 in environment variables
-- Rate limiting (100 requests/minute per IP)
-- Security headers (XSS protection, CSRF protection)
-- Input validation and sanitization
-- SMS injection protection
-- Duplicate voucher prevention
-
-## Database Schema
-
-### Tables
-- `transactions` - PromptPay transactions
-- `voucher_transactions` - TrueWallet voucher redemptions
-- `users` - User accounts and credit balances
-- `outgoing_transactions` - SMS tracking for outgoing payments
-- `failed_vouchers` - Failed voucher redemption attempts
-
-## Testing
-
-### Test Endpoints
+### Frontend (.env.local)
 ```bash
-# Test QR generation
+NEXT_PUBLIC_API_URL=http://localhost:3001/api
+```
+
+## 📡 API Endpoints
+
+### Users
+- `GET /api/user-credits/:userId` - Get user credits
+- `POST /api/fix-credits/:userId` - Fix user credits
+
+### Transactions (PromptPay)
+- `POST /api/create-transaction` - Create new transaction
+- `GET /api/transaction-status/:transactionId` - Check transaction status
+- `GET /api/transactions/:userId` - Get transaction history
+- `DELETE /api/transaction/:transactionId` - Delete transaction
+- `POST /api/confirm-transaction/:transactionId` - Confirm transaction
+- `GET /api/stats` - Get transaction statistics
+
+### TrueWallet
+- `POST /api/truewallet/validate` - Validate voucher code
+- `POST /api/truewallet/redeem` - Redeem voucher
+- `GET /api/truewallet/history/:userId` - Get voucher history
+- `GET /api/truewallet/stats` - Get voucher statistics
+
+### SMS Webhook
+- `POST /api/sms-webhook` - SMS webhook endpoint
+- `GET /api/sms-logs` - Get SMS logs
+- `POST /api/test-sms-parsing` - Test SMS parsing
+
+### Testing
+- `POST /api/test-qr` - Test QR generation
+- `POST /api/test-sms-parse` - Test SMS parsing
+- `GET /api/system-info` - Get system information
+- `GET /api/run-all-tests` - Run all tests
+- `GET /api/health-check` - Health check
+
+## 🚀 Usage
+
+1. Start both backend and frontend servers
+2. Open http://localhost:3000 for the frontend
+3. Backend API available at http://localhost:3001/api
+
+### PromptPay Flow
+1. Enter amount in TopUp component
+2. Generate QR Code
+3. Scan and pay via PromptPay
+4. SMS webhook confirms payment
+5. Credits automatically updated
+
+### TrueWallet Flow
+1. Copy voucher code from TrueWallet app
+2. Paste into TrueWallet component
+3. Redeem voucher
+4. Credits automatically updated
+
+## 🧪 Testing
+
+```bash
+# Backend tests
+cd nestjs-backend
+npm run test
+
+# Test all systems
+curl http://localhost:3001/api/run-all-tests
+
+# Test specific features
 curl -X POST http://localhost:3001/api/test-qr \
   -H "Content-Type: application/json" \
   -d '{"phone":"0944283381","amount":100}'
-
-# Test SMS detection
-curl -X POST http://localhost:3001/api/test-sms-detection \
-  -H "Content-Type: application/json" \
-  -d '{"message":"เงินเข้า 100.50 บาท"}'
-
-# Test voucher validation
-curl -X POST http://localhost:3001/api/truewallet/validate \
-  -H "Content-Type: application/json" \
-  -d '{"voucherCode":"xxxxhFog10Ijbmg1c"}'
 ```
 
-## Deployment
+## 📋 Migration Changes
 
-### Production Environment Variables
-```env
-NODE_ENV=production
-PORT=3001
-DB_PATH=/app/data/transactions.db
-PROMPTPAY_PHONE=0944283381
-TRUEWALLET_PHONE=0944283381
-```
+### From Original React/Express to Next.js/Nest.js
 
-### Build Frontend
-```bash
-cd frontend
-npm run build
-```
+#### Frontend Changes:
+- ✅ React → Next.js 15
+- ✅ JavaScript → TypeScript
+- ✅ CSS → Tailwind CSS
+- ✅ Component structure preserved
+- ✅ API calls updated to TypeScript
 
-## Monitoring
+#### Backend Changes:
+- ✅ Express → Nest.js
+- ✅ JavaScript → TypeScript
+- ✅ SQLite queries → TypeORM
+- ✅ Route handlers → Controllers
+- ✅ Business logic → Services
+- ✅ Modular architecture
+- ✅ Global validation & CORS
 
-### Health Check
-```bash
-curl http://localhost:3001/api/health
-```
+#### Database Changes:
+- ✅ Raw SQL → TypeORM entities
+- ✅ Type safety
+- ✅ Auto-migration support
 
-### Statistics
-- System statistics: `GET /api/stats`
-- Payment method breakdown: `GET /api/payment/stats`
-- TrueWallet specific: `GET /api/truewallet/stats`
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Commit changes: `git commit -am 'Add feature'`
-4. Push to branch: `git push origin feature-name`
-5. Create Pull Request
+2. Create feature branch
+3. Make changes
+4. Test thoroughly
+5. Submit pull request
 
-## Troubleshooting
+## 📄 License
 
-### Common Issues
+This project is private and confidential.
 
-1. **TrueWallet voucher errors**
-   - Check if `@fortune-inc/tw-voucher` is installed
-   - Verify phone number in .env
-   - Use test endpoints to validate codes
+## 🆘 Support
 
-2. **SMS detection not working**
-   - Check SMS format with test endpoints
-   - Verify webhook URL configuration
-   - Check console logs for pattern matching
+For issues and questions:
+1. Check the original project documentation
+2. Test endpoints using the built-in test module
+3. Review TypeScript types and interfaces
 
-3. **Database connection errors**
-   - Ensure write permissions for database file
-   - Check disk space
-   - Verify DB_PATH in environment
+---
 
-### Debug Mode
-```bash
-NODE_ENV=development npm run dev
-```
-
-## License
-
-MIT License - see LICENSE file for details
-
-## Support
-
-- Repository: https://github.com/neszaran194/promptpay-truewallet-system
-- Issues: https://github.com/neszaran194/promptpay-truewallet-system/issues
-- Phone: 0944283381 (PromptPay & TrueWallet)
-
-## Acknowledgments
-
-- [@fortune-inc/tw-voucher](https://github.com/Fortune-Inc/tw-voucher) for TrueWallet integration
-- PromptPay QR standard by Bank of Thailand
-- React and Node.js communities
+**Note**: This is a complete conversion from the original React/Express system to Next.js/Nest.js with TypeScript, maintaining all original functionality while adding modern development practices and type safety.
