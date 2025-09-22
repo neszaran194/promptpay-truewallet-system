@@ -18,7 +18,7 @@ export class Transaction {
   status: string;
 
   @Column({ default: 'incoming' })
-  type: string; // 'incoming' หรือ 'outgoing'
+  type: string; // 'incoming', 'outgoing', หรือ 'truewallet'
 
   @Column({ type: 'text', nullable: true })
   qr_code_url: string;

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import TopUpComponent from './TopUpComponent';
 import TrueWalletComponent from './TrueWalletComponent';
+import { Button } from './ui/Button';
 import {
   Wallet,
   Gift,
@@ -150,14 +151,15 @@ const PaymentHubComponent: React.FC<PaymentHubComponentProps> = ({ userId = 'use
             </div>
           </div>
 
-          <button
+          <Button
             onClick={refreshData}
             disabled={loading}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            variant="default"
+            size="default"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             <span>รีเฟรช</span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -166,10 +168,11 @@ const PaymentHubComponent: React.FC<PaymentHubComponentProps> = ({ userId = 'use
         <div className="border-b border-gray-200">
           <nav className="flex">
             {tabs.map((tab) => (
-              <button
+              <Button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-6 py-4 border-b-2 font-medium text-sm transition-colors ${
+                variant="ghost"
+                className={`flex items-center space-x-2 px-6 py-4 border-b-2 font-medium text-sm rounded-none transition-colors ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -177,7 +180,7 @@ const PaymentHubComponent: React.FC<PaymentHubComponentProps> = ({ userId = 'use
               >
                 {getTabIcon(tab.icon)}
                 <span>{tab.label}</span>
-              </button>
+              </Button>
             ))}
           </nav>
         </div>

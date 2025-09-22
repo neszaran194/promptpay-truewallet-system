@@ -14,6 +14,14 @@ import {
   ClockIcon,
   XCircleIcon
 } from '@heroicons/react/24/outline';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/Select';
+import { Button } from '../../components/ui/Button';
 
 interface Transaction {
   transaction_id: string;
@@ -38,7 +46,7 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [stats, setStats] = useState<TransactionStats[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'incoming' | 'outgoing'>('all');
+  const [filter, setFilter] = useState<'all' | 'incoming' | 'truewallet' | 'outgoing'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'confirmed' | 'expired'>('all');
   const [userId] = useState('user_123'); // Default user ID
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
@@ -145,9 +153,16 @@ export default function TransactionsPage() {
 
   const getTypeBadge = (type: string) => {
     const baseClass = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
-    return type === 'incoming'
-      ? `${baseClass} bg-blue-100 text-blue-800`
-      : `${baseClass} bg-orange-100 text-orange-800`;
+    switch (type) {
+      case 'incoming':
+        return `${baseClass} bg-blue-100 text-blue-800`;
+      case 'truewallet':
+        return `${baseClass} bg-green-100 text-green-800`;
+      case 'outgoing':
+        return `${baseClass} bg-orange-100 text-orange-800`;
+      default:
+        return `${baseClass} bg-gray-100 text-gray-800`;
+    }
   };
 
   const exportToCSV = () => {
@@ -181,11 +196,17 @@ export default function TransactionsPage() {
       .filter(t => (t.type === 'incoming' || !t.type) && t.status === 'confirmed')
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
+    const truewallet = transactions
+      .filter(t => t.type === 'truewallet' && t.status === 'confirmed')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
     const outgoing = transactions
       .filter(t => t.type === 'outgoing' && t.status === 'confirmed')
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
-    return { incoming, outgoing, net: incoming - outgoing };
+    const totalIncoming = incoming + truewallet;
+
+    return { incoming, truewallet, outgoing, totalIncoming, net: totalIncoming - outgoing };
   };
 
   const totals = calculateTotals();
@@ -202,16 +223,32 @@ export default function TransactionsPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">เงินเข้า</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-sm font-medium text-gray-600">PromptPay</p>
+                <p className="text-2xl font-bold text-blue-600">
                   ฿{totals.incoming.toFixed(2)}
                 </p>
               </div>
-              <ArrowDownIcon className="h-8 w-8 text-green-500" />
+              <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-600 font-bold">P</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">TrueWallet</p>
+                <p className="text-2xl font-bold text-green-600">
+                  ฿{totals.truewallet.toFixed(2)}
+                </p>
+              </div>
+              <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
+                <span className="text-green-600 font-bold">T</span>
+              </div>
             </div>
           </div>
 
@@ -231,12 +268,12 @@ export default function TransactionsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">ยอดสุทธิ</p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-2xl font-bold text-purple-600">
                   ฿{totals.net.toFixed(2)}
                 </p>
               </div>
-              <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-blue-600 font-bold">Σ</span>
+              <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
+                <span className="text-purple-600 font-bold">Σ</span>
               </div>
             </div>
           </div>
@@ -266,44 +303,47 @@ export default function TransactionsPage() {
                   <span className="text-sm font-medium text-gray-700">ตัวกรอง:</span>
                 </div>
 
-                <select
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value as any)}
-                  className="rounded-md border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="all">ทั้งหมด</option>
-                  <option value="incoming">เงินเข้า</option>
-                  <option value="outgoing">เงินออก</option>
-                </select>
+                <Select value={filter} onValueChange={(value: any) => setFilter(value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">ทั้งหมด</SelectItem>
+                    <SelectItem value="incoming">PromptPay</SelectItem>
+                    <SelectItem value="truewallet">TrueWallet</SelectItem>
+                    <SelectItem value="outgoing">เงินออก</SelectItem>
+                  </SelectContent>
+                </Select>
 
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="rounded-md border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="all">ทุกสถานะ</option>
-                  <option value="pending">รอดำเนินการ</option>
-                  <option value="confirmed">สำเร็จ</option>
-                  <option value="expired">หมดอายุ</option>
-                </select>
+                <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">ทุกสถานะ</SelectItem>
+                    <SelectItem value="pending">รอดำเนินการ</SelectItem>
+                    <SelectItem value="confirmed">สำเร็จ</SelectItem>
+                    <SelectItem value="expired">หมดอายุ</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex items-center gap-2">
-                <button
+                <Button
                   onClick={fetchTransactions}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  variant="outline"
                 >
                   <ArrowPathIcon className="h-4 w-4 mr-2" />
                   รีเฟรช
-                </button>
+                </Button>
 
-                <button
+                <Button
                   onClick={exportToCSV}
-                  className="inline-flex items-center px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  variant="default"
                 >
                   <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
                   Export CSV
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -367,7 +407,8 @@ export default function TransactionsPage() {
                             <ArrowDownIcon className="h-4 w-4 text-green-500 mr-1" />
                           )}
                           <span className={getTypeBadge(transaction.type || 'incoming')}>
-                            {transaction.type === 'outgoing' ? 'เงินออก' : 'เงินเข้า'}
+                            {transaction.type === 'outgoing' ? 'เงินออก' :
+                             transaction.type === 'truewallet' ? 'TrueWallet' : 'PromptPay'}
                           </span>
                         </div>
                       </td>

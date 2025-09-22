@@ -34,12 +34,12 @@ let TruewalletController = class TruewalletController {
     }
     async redeemVoucher(body) {
         try {
-            const { userId, voucherCode } = body;
+            const { userId, voucherCode, phone } = body;
             if (!userId || !voucherCode) {
                 throw new common_1.HttpException({ success: false, error: 'กรุณาระบุ User ID และโค้ดซองอั่งเปา' }, common_1.HttpStatus.BAD_REQUEST);
             }
-            console.log(`🎁 Processing voucher redemption for user: ${userId}`);
-            const result = await this.truewalletService.redeemVoucher(userId, voucherCode);
+            console.log(`🎁 Processing voucher redemption for user: ${userId}, phone: ${phone || 'default'}`);
+            const result = await this.truewalletService.redeemVoucher(userId, voucherCode, phone);
             return {
                 success: true,
                 message: 'แลกซองอั่งเปาสำเร็จ',

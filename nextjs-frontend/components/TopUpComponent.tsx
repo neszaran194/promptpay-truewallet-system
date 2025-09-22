@@ -13,6 +13,9 @@ import {
   AlertTriangle,
   Timer
 } from 'lucide-react';
+import Modal from './Modal';
+import { useModal } from './useModal';
+import { Button } from './ui/Button';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -39,6 +42,8 @@ const TopUpComponent: React.FC<TopUpComponentProps> = ({ userId = 'user_123', on
   const [transactions, setTransactions] = useState<any[]>([]);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [isExpired, setIsExpired] = useState<boolean>(false);
+
+  const { modalState, hideModal, showSuccess, showError, showInfo } = useModal();
 
   useEffect(() => {
     fetchUserCredits();
@@ -99,7 +104,7 @@ const TopUpComponent: React.FC<TopUpComponentProps> = ({ userId = 'user_123', on
 
   const generateQR = async () => {
     if (!amount || parseFloat(amount) <= 0) {
-      alert('กรุณาใส่จำนวนเงินที่ถูกต้อง');
+      showError('กรุณาใส่จำนวนเงินที่ถูกต้อง');
       return;
     }
 
@@ -122,7 +127,7 @@ const TopUpComponent: React.FC<TopUpComponentProps> = ({ userId = 'user_123', on
       }
     } catch (error) {
       console.error('Error generating QR:', error);
-      alert('เกิดข้อผิดพลาดในการสร้าง QR Code');
+      showError('เกิดข้อผิดพลาดในการสร้าง QR Code');
     } finally {
       setLoading(false);
     }
@@ -143,7 +148,7 @@ const TopUpComponent: React.FC<TopUpComponentProps> = ({ userId = 'user_123', on
           await fetchUserCredits();
           await fetchTransactionHistory();
           if (onSuccess) onSuccess();
-          alert('🎉 การเติมเงินสำเร็จแล้ว!');
+          showSuccess('🎉 การเติมเงินสำเร็จแล้ว!');
         } else if (status === 'expired' || apiExpired) {
           setTransaction(prev => prev ? { ...prev, status: 'expired' } : null);
           setIsExpired(true);
@@ -174,7 +179,7 @@ const TopUpComponent: React.FC<TopUpComponentProps> = ({ userId = 'user_123', on
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert('คัดลอกแล้ว!');
+    showInfo('คัดลอกแล้ว!');
   };
 
   const presetAmounts = [50, 100, 300, 500, 1000, 2000];
@@ -205,30 +210,32 @@ const TopUpComponent: React.FC<TopUpComponentProps> = ({ userId = 'user_123', on
             {/* Preset amounts */}
             <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
               {presetAmounts.map((preset) => (
-                <button
+                <Button
                   key={preset}
                   onClick={() => setAmount(preset.toString())}
-                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors text-gray-600"
+                  variant="ghost"
+                  size="sm"
                 >
                   ฿{preset}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
 
           {/* Generate QR button */}
-          <button
+          <Button
             onClick={generateQR}
             disabled={loading || !amount}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+            className="w-full"
+            size="lg"
           >
             {loading ? (
-              <RefreshCw className="w-5 h-5 animate-spin" />
+              <RefreshCw className="w-5 h-5 animate-spin mr-2" />
             ) : (
-              <QrCode className="w-5 h-5" />
+              <QrCode className="w-5 h-5 mr-2" />
             )}
             <span>{loading ? 'กำลังสร้าง QR Code...' : 'สร้าง QR Code'}</span>
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="space-y-6">
@@ -255,12 +262,14 @@ const TopUpComponent: React.FC<TopUpComponentProps> = ({ userId = 'user_123', on
                   <p className="text-lg font-semibold text-gray-600">จำนวนเงิน: ฿{transaction.amount.toLocaleString()}</p>
                   <p className="text-sm text-gray-600">
                     ID: {transaction.transactionId}
-                    <button
+                    <Button
                       onClick={() => copyToClipboard(transaction.transactionId)}
-                      className="ml-2 text-blue-600 hover:text-blue-800"
+                      variant="ghost"
+                      size="sm"
+                      className="ml-2 h-auto p-1"
                     >
-                      <Copy className="w-4 h-4 inline" />
-                    </button>
+                      <Copy className="w-4 h-4" />
+                    </Button>
                   </p>
                 </div>
 
@@ -275,7 +284,7 @@ const TopUpComponent: React.FC<TopUpComponentProps> = ({ userId = 'user_123', on
               <div className="space-y-4">
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
                 <h3 className="text-xl font-semibold text-green-600">การเติมเงินสำเร็จ!</h3>
-                <p className="text-lg">จำนวนเงิน: ฿{transaction.amount.toLocaleString()}</p>
+                <p className="text-lg text-gray-600">จำนวนเงิน: ฿{transaction.amount.toLocaleString()}</p>
               </div>
             )}
 
@@ -290,21 +299,24 @@ const TopUpComponent: React.FC<TopUpComponentProps> = ({ userId = 'user_123', on
 
           {/* Action buttons */}
           <div className="flex space-x-4">
-            <button
+            <Button
               onClick={resetForm}
-              className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+              variant="secondary"
+              className="flex-1"
+              size="lg"
             >
               สร้างใหม่
-            </button>
+            </Button>
             {transaction.status === 'pending' && !isExpired && (
-              <button
+              <Button
                 onClick={checkTransactionStatus}
                 disabled={checking}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                className="flex-1"
+                size="lg"
               >
-                <RefreshCw className={`w-5 h-5 ${checking ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-5 h-5 mr-2 ${checking ? 'animate-spin' : ''}`} />
                 <span>ตรวจสอบสถานะ</span>
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -334,6 +346,20 @@ const TopUpComponent: React.FC<TopUpComponentProps> = ({ userId = 'user_123', on
           </div>
         </div>
       )}
+
+      {/* Modal */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={hideModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        confirmText={modalState.confirmText}
+        cancelText={modalState.cancelText}
+        onConfirm={modalState.onConfirm}
+        onCancel={modalState.onCancel}
+        showCancel={modalState.showCancel}
+      />
     </div>
   );
 };

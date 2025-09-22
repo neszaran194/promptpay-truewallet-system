@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TrueWalletVoucher } from '../entities/truewallet-voucher.entity';
 import { UsersService } from '../users/users.service';
+import { TrueWalletApiService } from '../utils/truewallet-api.service';
+import { TransactionsService } from '../transactions/transactions.service';
 import axios from 'axios';
 
 @Injectable()
@@ -11,30 +13,23 @@ export class TruewalletService {
     @InjectRepository(TrueWalletVoucher)
     private vouchersRepository: Repository<TrueWalletVoucher>,
     private usersService: UsersService,
+    private trueWalletApiService: TrueWalletApiService,
+    private transactionsService: TransactionsService,
   ) {}
 
   async validateVoucher(voucherCode: string): Promise<any> {
     try {
-      // Clean voucher code
-      const cleanCode = voucherCode.trim();
+      const validation = this.trueWalletApiService.validateVoucherCode(voucherCode.trim());
 
-      // Check if it's URL format
-      let finalCode = cleanCode;
-      if (cleanCode.includes('wallet.truemoney.com')) {
-        const urlParts = cleanCode.split('/');
-        finalCode = urlParts[urlParts.length - 1];
-      }
-
-      // Basic validation
-      if (finalCode.length < 10) {
+      if (!validation.isValid) {
         throw new Error('โค้ดซองอั่งเปาไม่ถูกต้อง');
       }
 
       return {
         success: true,
         validation: {
-          type: cleanCode.includes('wallet.truemoney.com') ? 'url' : 'code',
-          code: finalCode
+          type: validation.type,
+          code: validation.cleanCode
         }
       };
     } catch (error) {
@@ -42,62 +37,132 @@ export class TruewalletService {
     }
   }
 
-  async redeemVoucher(userId: string, voucherCode: string): Promise<any> {
+  async redeemVoucher(userId: string, voucherCode: string, phone?: string): Promise<any> {
     try {
+      console.log(`🎁 Starting voucher redemption for user: ${userId}, code: ${voucherCode}`);
+
       // Validate and clean the voucher code
       const validation = await this.validateVoucher(voucherCode);
       const cleanCode = validation.validation.code;
+      console.log(`✅ Voucher validated, clean code: ${cleanCode}`);
 
-      // Check if voucher was already redeemed
+      // Check if voucher was already redeemed in our system
       const existingVoucher = await this.vouchersRepository.findOne({
         where: { voucher_code: cleanCode }
       });
 
       if (existingVoucher) {
-        throw new Error('ซองอั่งเปานี้ถูกใช้งานแล้ว');
+        console.log(`❌ Voucher already redeemed in our system: ${cleanCode}`);
+        throw new Error('ซองอั่งเปานี้ถูกใช้งานในระบบแล้ว');
       }
 
-      // Mock API response (replace with actual API when available)
-      // In production, this would call the actual TrueWallet API
-      const result = {
-        success: true,
-        voucher_info: {
-          amount: 100,
-          owner_full_name: 'Test User',
-          message: 'Test voucher redemption'
-        }
-      };
+      // Use default phone number if not provided (from environment variable)
+      const phoneNumber = phone || process.env.TRUEWALLET_PHONE || '0944283381';
 
-      if (!result.success) {
-        throw new Error('ไม่สามารถแลกซองอั่งเปาได้');
+      // Check if this is a test voucher - use fallback mode
+      if (cleanCode.includes('TEST')) {
+        console.log('🔄 Using fallback mode for test voucher');
+
+        const mockResult = {
+          amount: Math.floor(Math.random() * 500) + 50,
+          owner_full_name: 'Test TrueWallet User',
+          code: cleanCode
+        };
+
+        // Ensure user exists first
+        await this.usersService.findOrCreateUser(userId);
+        console.log(`👤 User ensured: ${userId}`);
+
+        // Save voucher record
+        const voucherRecord = this.vouchersRepository.create({
+          user_id: userId,
+          voucher_code: cleanCode,
+          amount: mockResult.amount,
+          owner_full_name: mockResult.owner_full_name,
+          status: 'redeemed'
+        });
+
+        const savedVoucher = await this.vouchersRepository.save(voucherRecord);
+        console.log(`💾 Test voucher saved:`, savedVoucher);
+
+        // Update user credits
+        const updatedUser = await this.usersService.updateCredits(userId, mockResult.amount);
+        console.log(`💳 Credits updated for user ${userId}, new balance: ${updatedUser.credits}`);
+
+        // Create transaction record for history
+        await this.transactionsService.createTrueWalletTransaction(
+          userId,
+          mockResult.amount,
+          cleanCode,
+          mockResult.owner_full_name
+        );
+        console.log(`📝 Transaction record created for TrueWallet voucher`);
+
+        return {
+          voucher_info: {
+            amount: mockResult.amount,
+            owner_full_name: mockResult.owner_full_name,
+            voucher_code: cleanCode
+          }
+        };
       }
 
-      const { voucher_info } = result;
+      try {
+        // Call real TrueWallet API
+        console.log(`📞 Calling TrueWallet API with phone: ${phoneNumber}`);
+        const apiResult = await this.trueWalletApiService.redeemVoucher(phoneNumber, voucherCode);
+        console.log(`💰 TrueWallet API result:`, apiResult);
 
-      // Save voucher record
-      const voucherRecord = this.vouchersRepository.create({
-        user_id: userId,
-        voucher_code: cleanCode,
-        amount: voucher_info.amount,
-        owner_full_name: voucher_info.owner_full_name,
-        status: 'redeemed'
-      });
+        // Ensure user exists first
+        await this.usersService.findOrCreateUser(userId);
+        console.log(`👤 User ensured: ${userId}`);
 
-      await this.vouchersRepository.save(voucherRecord);
+        // Save voucher record
+        const voucherRecord = this.vouchersRepository.create({
+          user_id: userId,
+          voucher_code: cleanCode,
+          amount: apiResult.amount,
+          owner_full_name: apiResult.owner_full_name,
+          status: 'redeemed'
+        });
 
-      // Update user credits
-      await this.usersService.updateCredits(userId, voucher_info.amount);
+        const savedVoucher = await this.vouchersRepository.save(voucherRecord);
+        console.log(`💾 Voucher saved:`, savedVoucher);
 
-      return {
-        voucher_info: {
-          amount: voucher_info.amount,
-          owner_full_name: voucher_info.owner_full_name,
-          voucher_code: cleanCode
+        // Update user credits
+        const updatedUser = await this.usersService.updateCredits(userId, apiResult.amount);
+        console.log(`💳 Credits updated for user ${userId}, new balance: ${updatedUser.credits}`);
+
+        // Create transaction record for history
+        await this.transactionsService.createTrueWalletTransaction(
+          userId,
+          apiResult.amount,
+          cleanCode,
+          apiResult.owner_full_name
+        );
+        console.log(`📝 Transaction record created for TrueWallet voucher`);
+
+        return {
+          voucher_info: {
+            amount: apiResult.amount,
+            owner_full_name: apiResult.owner_full_name,
+            voucher_code: cleanCode
+          }
+        };
+
+      } catch (apiError) {
+        console.error('❌ TrueWallet API error:', apiError);
+
+        // If it's a known TrueWallet error, throw the translated message
+        if (apiError instanceof Error) {
+          throw apiError;
         }
-      };
+
+        throw new Error('เกิดข้อผิดพลาดในการเชื่อมต่อกับ TrueWallet');
+      }
 
     } catch (error) {
-      console.error('TrueWallet redeem error:', error);
+      console.error('❌ TrueWallet redeem error:', error);
       throw new Error(error.message || 'เกิดข้อผิดพลาดในการแลกซอง');
     }
   }

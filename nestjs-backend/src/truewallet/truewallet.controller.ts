@@ -27,9 +27,9 @@ export class TruewalletController {
   }
 
   @Post('redeem')
-  async redeemVoucher(@Body() body: { userId: string; voucherCode: string }) {
+  async redeemVoucher(@Body() body: { userId: string; voucherCode: string; phone?: string }) {
     try {
-      const { userId, voucherCode } = body;
+      const { userId, voucherCode, phone } = body;
 
       if (!userId || !voucherCode) {
         throw new HttpException(
@@ -38,9 +38,9 @@ export class TruewalletController {
         );
       }
 
-      console.log(`🎁 Processing voucher redemption for user: ${userId}`);
+      console.log(`🎁 Processing voucher redemption for user: ${userId}, phone: ${phone || 'default'}`);
 
-      const result = await this.truewalletService.redeemVoucher(userId, voucherCode);
+      const result = await this.truewalletService.redeemVoucher(userId, voucherCode, phone);
 
       return {
         success: true,

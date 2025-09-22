@@ -20,4 +20,5 @@ export declare class TransactionsService {
     getOutgoingTransactions(userId: string, limit?: number, offset?: number): Promise<any>;
     processOutgoingPayment(transactionId: string, smsData?: any): Promise<any>;
     findMatchingOutgoingTransaction(amount: number): Promise<Transaction | null>;
+    createTrueWalletTransaction(userId: string, amount: number, voucherCode: string, ownerFullName: string): Promise<any>;
 }

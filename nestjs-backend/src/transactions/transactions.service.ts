@@ -136,6 +136,7 @@ export class TransactionsService {
           amount: Number(tx.amount),
           status: tx.status,
           type: tx.type || 'incoming',
+          payment_ref: tx.payment_ref,
           created_at: tx.created_at,
           expires_at: tx.expires_at
         })),
@@ -454,6 +455,52 @@ export class TransactionsService {
     } catch (error) {
       console.error('Error finding matching outgoing transaction:', error);
       return null;
+    }
+  }
+
+  async createTrueWalletTransaction(
+    userId: string,
+    amount: number,
+    voucherCode: string,
+    ownerFullName: string
+  ): Promise<any> {
+    try {
+      const transactionId = uuidv4();
+
+      console.log('🎁 Creating TrueWallet transaction:', {
+        transactionId,
+        userId,
+        amount,
+        voucherCode,
+        ownerFullName
+      });
+
+      // Create TrueWallet transaction record
+      const transaction = this.transactionsRepository.create({
+        transaction_id: transactionId,
+        user_id: userId,
+        amount: amount,
+        status: 'confirmed', // TrueWallet vouchers are immediately confirmed
+        type: 'truewallet',
+        expires_at: new Date(), // Already processed
+        payment_ref: `TW_${voucherCode}_${ownerFullName}`
+      });
+
+      await this.transactionsRepository.save(transaction);
+
+      return {
+        success: true,
+        transactionId,
+        amount,
+        type: 'truewallet',
+        voucherCode,
+        ownerFullName,
+        status: 'confirmed',
+        message: 'TrueWallet transaction recorded successfully'
+      };
+    } catch (error) {
+      console.error('❌ Error creating TrueWallet transaction:', error);
+      throw new Error('Internal server error');
     }
   }
 }

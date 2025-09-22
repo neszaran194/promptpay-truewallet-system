@@ -12,7 +12,9 @@ const typeorm_1 = require("@nestjs/typeorm");
 const truewallet_controller_1 = require("./truewallet.controller");
 const truewallet_service_1 = require("./truewallet.service");
 const truewallet_voucher_entity_1 = require("../entities/truewallet-voucher.entity");
+const truewallet_api_service_1 = require("../utils/truewallet-api.service");
 const users_module_1 = require("../users/users.module");
+const transactions_module_1 = require("../transactions/transactions.module");
 let TruewalletModule = class TruewalletModule {
 };
 exports.TruewalletModule = TruewalletModule;
@@ -20,10 +22,11 @@ exports.TruewalletModule = TruewalletModule = __decorate([
     (0, common_1.Module)({
         imports: [
             typeorm_1.TypeOrmModule.forFeature([truewallet_voucher_entity_1.TrueWalletVoucher]),
-            users_module_1.UsersModule
+            users_module_1.UsersModule,
+            transactions_module_1.TransactionsModule
         ],
         controllers: [truewallet_controller_1.TruewalletController],
-        providers: [truewallet_service_1.TruewalletService],
+        providers: [truewallet_service_1.TruewalletService, truewallet_api_service_1.TrueWalletApiService],
         exports: [truewallet_service_1.TruewalletService]
     })
 ], TruewalletModule);

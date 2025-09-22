@@ -1,6 +1,6 @@
 # PromptPay & TrueWallet System (Next.js + Nest.js)
 
-ระบบเติมเงินครบวงจรที่รองรับทั้ง PromptPay และ TrueWallet ซองอั่งเปา แปลงจาก React/Express มาเป็น Next.js/Nest.js
+ระบบเติมเงินครบวงจรที่รองรับทั้ง PromptPay และ TrueWallet ซองอั่งเปา แปลงจาก React/Express มาเป็น Next.js/Nest.js พร้อม UI สวยงามด้วย Radix UI
 
 ## 🚀 Features
 
@@ -8,6 +8,9 @@
 - ✅ **PaymentHubComponent** - หน้าหลักสำหรับเลือกวิธีการเติมเงิน
 - ✅ **TopUpComponent** - สร้าง QR Code PromptPay และตรวจสอบสถานะการชำระ
 - ✅ **TrueWalletComponent** - แลกซองอั่งเปา TrueWallet
+- ✅ **Transaction History Page** - ประวัติและสถิติการเติมเงิน
+- ✅ **Radix UI Components** - ระบบ UI ที่สวยงามและ accessible
+- ✅ **Modal System** - แทนที่ browser alerts ด้วย modal ที่สวยงาม
 - ✅ TypeScript support
 - ✅ Tailwind CSS
 - ✅ Responsive design
@@ -28,11 +31,20 @@
 ├── nextjs-frontend/          # Next.js Frontend
 │   ├── app/
 │   │   ├── layout.tsx
-│   │   └── page.tsx
+│   │   ├── page.tsx
+│   │   └── transactions/
+│   │       └── page.tsx
 │   ├── components/
 │   │   ├── PaymentHubComponent.tsx
 │   │   ├── TopUpComponent.tsx
-│   │   └── TrueWalletComponent.tsx
+│   │   ├── TrueWalletComponent.tsx
+│   │   ├── Modal.tsx
+│   │   ├── useModal.tsx
+│   │   └── ui/
+│   │       ├── Button.tsx
+│   │       └── Select.tsx
+│   ├── lib/
+│   │   └── utils.ts
 │   └── .env.local
 │
 ├── nestjs-backend/           # Nest.js Backend
@@ -79,6 +91,10 @@ cd nextjs-frontend
 
 # Install dependencies
 npm install
+
+# Install Radix UI dependencies
+npm install @radix-ui/react-dialog @radix-ui/react-select @radix-ui/react-slot
+npm install @radix-ui/react-icons class-variance-authority clsx tailwind-merge
 
 # Configure environment
 # Create .env.local with API URL
@@ -148,17 +164,27 @@ NEXT_PUBLIC_API_URL=http://localhost:3001/api
 3. Backend API available at http://localhost:3001/api
 
 ### PromptPay Flow
-1. Enter amount in TopUp component
-2. Generate QR Code
+1. Enter amount in TopUp component (use preset buttons or custom amount)
+2. Generate QR Code with beautiful animations
 3. Scan and pay via PromptPay
-4. SMS webhook confirms payment
-5. Credits automatically updated
+4. Real-time status checking with countdown timer
+5. SMS webhook confirms payment
+6. Credits automatically updated with success modal
 
 ### TrueWallet Flow
 1. Copy voucher code from TrueWallet app
-2. Paste into TrueWallet component
-3. Redeem voucher
-4. Credits automatically updated
+2. Paste into TrueWallet component (paste button included)
+3. Optional: Validate voucher before redeeming
+4. Redeem voucher with loading indicators
+5. Credits automatically updated with celebration modal
+
+### UI Features
+- 🎨 Beautiful gradient modals with animations
+- 🎯 Accessible components with keyboard navigation
+- 📱 Fully responsive design
+- ⏱️ Real-time status updates
+- 🔄 Loading states and transitions
+- 🎉 Success celebrations with sparkle effects
 
 ## 🧪 Testing
 
@@ -184,8 +210,11 @@ curl -X POST http://localhost:3001/api/test-qr \
 - ✅ React → Next.js 15
 - ✅ JavaScript → TypeScript
 - ✅ CSS → Tailwind CSS
+- ✅ HTML elements → Radix UI components
+- ✅ Browser alerts → Beautiful modal dialogs
 - ✅ Component structure preserved
 - ✅ API calls updated to TypeScript
+- ✅ Full accessibility support
 
 #### Backend Changes:
 - ✅ Express → Nest.js

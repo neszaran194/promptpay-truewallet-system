@@ -8,6 +8,7 @@ export declare class TruewalletController {
     redeemVoucher(body: {
         userId: string;
         voucherCode: string;
+        phone?: string;
     }): Promise<any>;
     getVoucherHistory(userId: string, limit?: string, offset?: string): Promise<{
         success: boolean;

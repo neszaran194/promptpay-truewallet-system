@@ -13,6 +13,9 @@ import {
   Clock,
   TrendingUp
 } from 'lucide-react';
+import Modal from './Modal';
+import { useModal } from './useModal';
+import { Button } from './ui/Button';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -36,6 +39,8 @@ const TrueWalletComponent: React.FC<TrueWalletComponentProps> = ({ userId = 'use
   const [history, setHistory] = useState<VoucherHistory[]>([]);
   const [message, setMessage] = useState<string>('');
   const [messageType, setMessageType] = useState<'success' | 'error' | 'info' | ''>('');
+
+  const { modalState, hideModal, showSuccess, showError, showInfo } = useModal();
 
   useEffect(() => {
     fetchUserCredits();
@@ -75,7 +80,7 @@ const TrueWalletComponent: React.FC<TrueWalletComponentProps> = ({ userId = 'use
 
   const validateVoucherCode = async () => {
     if (!voucherCode.trim()) {
-      showMessage('กรุณาใส่โค้ดซองอั่งเปา', 'error');
+      showError('กรุณาใส่โค้ดซองอั่งเปา');
       return;
     }
 
@@ -86,44 +91,62 @@ const TrueWalletComponent: React.FC<TrueWalletComponentProps> = ({ userId = 'use
 
       if (response.data.success) {
         const validation = response.data.validation;
-        showMessage(
-          `โค้ดซองอั่งเปาถูกต้อง (ประเภท: ${validation.type === 'url' ? 'ลิงก์' : 'โค้ด'})`,
-          'success'
+        showSuccess(
+          `โค้ดซองอั่งเปาถูกต้อง (ประเภท: ${validation.type === 'url' ? 'ลิงก์' : 'โค้ด'})`
         );
       }
     } catch (error) {
-      showMessage('โค้ดซองอั่งเปาไม่ถูกต้อง', 'error');
+      showError('โค้ดซองอั่งเปาไม่ถูกต้อง');
     }
   };
 
   const redeemVoucher = async () => {
     if (!voucherCode.trim()) {
-      showMessage('กรุณาใส่โค้ดซองอั่งเปา', 'error');
+      showError('กรุณาใส่โค้ดซองอั่งเปา');
       return;
     }
 
     setLoading(true);
     try {
+      console.log('🎁 Attempting to redeem voucher:', voucherCode.trim());
+
       const response = await axios.post(`${API_BASE}/truewallet/redeem`, {
         userId,
         voucherCode: voucherCode.trim()
       });
 
+      console.log('✅ Redemption response:', response.data);
+
       if (response.data.success) {
         const { voucher_info } = response.data;
-        showMessage(
-          `แลกซองสำเร็จ! ได้รับ ${voucher_info.amount} บาท จาก ${voucher_info.owner_full_name}`,
-          'success'
+        showSuccess(
+          `แลกซองสำเร็จ! ได้รับ ${voucher_info.amount} บาท จาก ${voucher_info.owner_full_name}`
         );
 
         setVoucherCode('');
         await fetchUserCredits();
         await fetchVoucherHistory();
         if (onSuccess) onSuccess();
+      } else {
+        showError(response.data.error || 'การแลกซองไม่สำเร็จ');
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error || 'เกิดข้อผิดพลาดในการแลกซอง';
-      showMessage(errorMessage, 'error');
+      console.error('❌ Voucher redemption error:', error);
+
+      if (error.response) {
+        // Server responded with error status
+        console.log('Server error response:', error.response.data);
+        const errorMessage = error.response?.data?.error || `เกิดข้อผิดพลาด (${error.response.status})`;
+        showError(errorMessage);
+      } else if (error.request) {
+        // Request was made but no response received
+        console.log('Network error - no response:', error.request);
+        showError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่อ');
+      } else {
+        // Something else happened
+        console.log('Unexpected error:', error.message);
+        showError('เกิดข้อผิดพลาดในการแลกซอง');
+      }
     } finally {
       setLoading(false);
     }
@@ -131,16 +154,16 @@ const TrueWalletComponent: React.FC<TrueWalletComponentProps> = ({ userId = 'use
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    showMessage('คัดลอกแล้ว!', 'info');
+    showInfo('คัดลอกแล้ว!');
   };
 
   const pasteFromClipboard = async () => {
     try {
       const text = await navigator.clipboard.readText();
       setVoucherCode(text);
-      showMessage('วางโค้ดแล้ว', 'info');
+      showInfo('วางโค้ดแล้ว');
     } catch (error) {
-      showMessage('ไม่สามารถวางโค้ดได้', 'error');
+      showError('ไม่สามารถวางโค้ดได้');
     }
   };
 
@@ -201,13 +224,14 @@ const TrueWalletComponent: React.FC<TrueWalletComponentProps> = ({ userId = 'use
             className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-600"
             onKeyPress={(e) => e.key === 'Enter' && redeemVoucher()}
           />
-          <button
+          <Button
             onClick={pasteFromClipboard}
-            className="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+            variant="outline"
+            size="lg"
             title="วางจาก Clipboard"
           >
             <Copy className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         <div className="text-sm text-gray-600 space-y-2">
@@ -221,27 +245,31 @@ const TrueWalletComponent: React.FC<TrueWalletComponentProps> = ({ userId = 'use
 
       {/* Action buttons */}
       <div className="flex space-x-4">
-        <button
+        <Button
           onClick={validateVoucherCode}
           disabled={loading || !voucherCode.trim()}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+          variant="outline"
+          className="flex-1"
+          size="lg"
         >
-          <Gift className="w-5 h-5" />
+          <Gift className="w-5 h-5 mr-2" />
           <span>ตรวจสอบโค้ด</span>
-        </button>
+        </Button>
 
-        <button
+        <Button
           onClick={redeemVoucher}
           disabled={loading || !voucherCode.trim()}
-          className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
+          variant="success"
+          className="flex-1"
+          size="lg"
         >
           {loading ? (
-            <RefreshCw className="w-5 h-5 animate-spin" />
+            <RefreshCw className="w-5 h-5 animate-spin mr-2" />
           ) : (
-            <Wallet className="w-5 h-5" />
+            <Wallet className="w-5 h-5 mr-2" />
           )}
           <span>{loading ? 'กำลังแลก...' : 'แลกซอง'}</span>
-        </button>
+        </Button>
       </div>
 
       {/* Instructions */}
@@ -282,13 +310,15 @@ const TrueWalletComponent: React.FC<TrueWalletComponentProps> = ({ userId = 'use
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <button
+                  <Button
                     onClick={() => copyToClipboard(item.voucher_code)}
-                    className="p-1 text-green-600 hover:text-green-800 transition-colors"
+                    variant="ghost"
+                    size="sm"
+                    className="p-1 h-auto text-green-600 hover:text-green-800"
                     title="คัดลอกโค้ด"
                   >
                     <Copy className="w-4 h-4" />
-                  </button>
+                  </Button>
                   <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
                     สำเร็จ
                   </span>
@@ -308,6 +338,20 @@ const TrueWalletComponent: React.FC<TrueWalletComponentProps> = ({ userId = 'use
           <li>• เงินจะเข้าระบบทันทีหลังแลกซองสำเร็จ</li>
         </ul>
       </div>
+
+      {/* Modal */}
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={hideModal}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        confirmText={modalState.confirmText}
+        cancelText={modalState.cancelText}
+        onConfirm={modalState.onConfirm}
+        onCancel={modalState.onCancel}
+        showCancel={modalState.showCancel}
+      />
     </div>
   );
 };
