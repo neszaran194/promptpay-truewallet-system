@@ -304,7 +304,7 @@ export default function TransactionsPage() {
                 </div>
 
                 <Select value={filter} onValueChange={(value: any) => setFilter(value)}>
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-32 text-gray-700">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -316,7 +316,7 @@ export default function TransactionsPage() {
                 </Select>
 
                 <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-32 text-gray-700">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

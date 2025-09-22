@@ -28,7 +28,7 @@
 ## 📁 Project Structure
 
 ```
-├── nextjs-frontend/          # Next.js Frontend
+├── frontend/                 # Next.js Frontend
 │   ├── app/
 │   │   ├── layout.tsx
 │   │   ├── page.tsx
@@ -47,7 +47,7 @@
 │   │   └── utils.ts
 │   └── .env.local
 │
-├── nestjs-backend/           # Nest.js Backend
+├── backend/                  # Nest.js Backend
 │   ├── src/
 │   │   ├── entities/
 │   │   ├── users/
@@ -71,7 +71,7 @@
 ### Backend Setup (Nest.js)
 
 ```bash
-cd nestjs-backend
+cd backend
 
 # Install dependencies
 npm install
@@ -87,7 +87,7 @@ npm run start:dev
 ### Frontend Setup (Next.js)
 
 ```bash
-cd nextjs-frontend
+cd frontend
 
 # Install dependencies
 npm install
@@ -279,7 +279,7 @@ Error responses:
 
 ```bash
 # Backend tests
-cd nestjs-backend
+cd backend
 npm run test
 
 # Test all systems
